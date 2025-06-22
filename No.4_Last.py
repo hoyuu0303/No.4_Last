@@ -4,7 +4,7 @@ from PIL import ImageTk, Image
 import requests
 from io import BytesIO
 
-API_KEY = "fa29a4e058c02857e12dabcb1de0ce41"  # TMDB APIキー
+API_KEY = ""  # TMDB API消します
 
 # 翻訳関数
 def translate_to_japanese(text):
