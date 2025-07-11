@@ -4,7 +4,7 @@ from PIL import ImageTk, Image
 import requests
 from io import BytesIO
 
-API_KEY = ""  # TMDB API消します
+API_KEY = ""  # TMDB APIなので消します
 
 # 翻訳関数
 def translate_to_japanese(text):
@@ -23,7 +23,7 @@ def translate_to_japanese(text):
     except Exception as e:
         return "翻訳エラー：" + str(e)
 
-# メイン検索関数（映画 → アニメ の順に検索）
+# （映画 → アニメ の順に検索）
 def search_content():
     query = entry.get()
     if not query:
@@ -54,7 +54,7 @@ def search_content():
             image_label.config(image="", text="画像なし")
         return  # 映画が見つかったので終了
 
-    # アニメ検索（Jikan）
+    # アニメ検索（Jikan）幅を増やすために配置したけど微妙（gitに失礼）
     url_jikan = f"https://api.jikan.moe/v4/anime?q={query}"
     response_jikan = requests.get(url_jikan)
     data_jikan = response_jikan.json()
