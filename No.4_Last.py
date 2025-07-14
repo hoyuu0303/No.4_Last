@@ -3,8 +3,9 @@ from tkinter import messagebox
 from PIL import ImageTk, Image
 import requests
 from io import BytesIO
+from rapidfuzz import fuzz
 
-API_KEY = ""  # TMDB APIなので消します
+API_KEY = ""  # TMDB APIキー消し
 
 # 翻訳関数
 def translate_to_japanese(text):
@@ -16,14 +17,27 @@ def translate_to_japanese(text):
         "format": "text"
     }
     headers = {"Content-Type": "application/json"}
-    try:
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
-        result = response.json()
-        return result.get("translatedText", "翻訳に失敗しました")
+    try:#映画とアニメ検索のエラー処理追加
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
     except Exception as e:
+        messagebox.showerror("通信エラー", f"映画データの取得に失敗しました:\n{e}")
         return "翻訳エラー：" + str(e)
+    
+#映画候補を類似検索して一番近いものを自動選出
+def get_best_match(user_input, candidates):
+    best_score = 0
+    best_match = None
+    for item in candidates:
+        title = item.get("title", "")
+        score = fuzz.ratio(user_input.lower(), title.lower())
+        if score > best_score:
+            best_score = score
+            best_match = item
+    return best_match if best_score > 50 else None 
 
-# （映画 → アニメ の順に検索）
+# メイン検索関数（映画 → アニメ の順に検索）
 def search_content():
     query = entry.get()
     if not query:
@@ -32,29 +46,35 @@ def search_content():
 
     # 映画検索（TMDB）
     url = f"https://api.themoviedb.org/3/search/movie?api_key={API_KEY}&query={query}&language=ja-JP"
-    response = requests.get(url)
-    data = response.json()
+    try:
+        response = requests.get(url, timeout=10)
+        data = response.json()
+    except Exception as e:
+        messagebox.showerror("エラー", f"映画データの取得に失敗しました:\n{e}")
+        return
+
 
     if data.get("results"):
-        movie = data["results"][0]
-        title_var.set(f"🎬 映画タイトル: {movie['title']}")
-        overview = movie["overview"] or "（日本語のあらすじがありません）"
-        overview_var.set(f"あらすじ:\n{overview}")
+        movie = get_best_match(query, data["results"])
+        if movie:
+            title_var.set(f"🎬 映画タイトル: {movie['title']}")
+            overview = movie["overview"] or "（日本語のあらすじがありません）"
+            overview_var.set(f"あらすじ:\n{overview}")
 
-        poster_path = movie.get("poster_path")
-        if poster_path:
-            poster_url = f"https://image.tmdb.org/t/p/w300{poster_path}"
+            poster_path = movie.get("poster_path")
+            if poster_path:
+                poster_url = f"https://image.tmdb.org/t/p/w300{poster_path}"
             img_data = requests.get(poster_url).content
             img = Image.open(BytesIO(img_data))
             img = img.resize((200, 300))
             img_tk = ImageTk.PhotoImage(img)
-            image_label.config(image=img_tk)
+            image_label.config(image=None)#画像が表示されない可能性があったので修正
             image_label.image = img_tk
         else:
             image_label.config(image="", text="画像なし")
         return  # 映画が見つかったので終了
 
-    # アニメ検索（Jikan）幅を増やすために配置したけど微妙（gitに失礼）
+    # アニメ検索（Jikan）
     url_jikan = f"https://api.jikan.moe/v4/anime?q={query}"
     response_jikan = requests.get(url_jikan)
     data_jikan = response_jikan.json()
@@ -67,6 +87,7 @@ def search_content():
         overview_var.set(f"あらすじ:\n{synopsis_ja}")
 
         image_url = anime['images']['jpg']['large_image_url']
+        print("Anime Image URL:", image_url)
         if image_url:
             img_data = requests.get(image_url).content
             img = Image.open(BytesIO(img_data))
@@ -91,7 +112,7 @@ root.geometry("450x700")
 entry = tk.Entry(root, width=40)
 entry.pack(pady=10)
 
-search_button = tk.Button(root, text="🔍 映画またはアニメを検索", command=search_content)
+search_button = tk.Button(root, text="🔍 映画を検索", command=search_content)
 search_button.pack(pady=5)
 
 title_var = tk.StringVar()
