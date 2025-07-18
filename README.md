@@ -16,6 +16,7 @@
 - Visual studio code内でファイル＞新しいテキストファイルを作成する。
 - コピーしたコードをVisual studio code内に**貼り付け**る。
 - 画面右上に**三角マーク**のボタンが表示されているため、クリック[実行]する。
+- **CMD(コマンドプロンプト)**で**pip install pillow requests**と**pip install rapidfuzz**が必要
 
 #使い方
 - **映像またはアニメ検索**に検索のキーワード、タイトルなどを入力する。
